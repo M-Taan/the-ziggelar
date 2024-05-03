@@ -42,7 +42,7 @@ pub fn main() !void {
 
     var player = Player{ .position = r.Vector2{ .x = PLAYER_STARTING_X, .y = PLAYER_STARTING_Y } };
 
-    const pipes: [NUMBER_OF_PIPES]pp.StructuralEntity = pp.initPipes(NUMBER_OF_PIPES, SCREEN_WIDTH, SCREEN_HEIGHT, 10000000);
+    var pipes: [NUMBER_OF_PIPES]pp.StructuralEntity = pp.initPipes(NUMBER_OF_PIPES, SCREEN_WIDTH, SCREEN_HEIGHT, 10000000);
 
     while (!r.WindowShouldClose()) {
         r.BeginDrawing();
@@ -50,8 +50,13 @@ pub fn main() !void {
 
         r.DrawCircle(@intFromFloat(player.position.x), @intFromFloat(player.position.y), PLAYER_RADIUS, r.WHITE);
 
-        for (pipes) |pipe| {
+        for (pipes, 0..) |pipe, index| {
             r.DrawRectangle(@intFromFloat(pipe.position.x), @intFromFloat(pipe.position.y), pipe.width, pipe.height, r.BLUE);
+            pipes[index].position.x -= 2;
+
+            if (pipes[index].position.x < -100) {
+                pipes[index].position.x = SCREEN_WIDTH;
+            }
         }
 
         _ = simulateGravity(&player);
