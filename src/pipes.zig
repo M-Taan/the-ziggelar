@@ -2,9 +2,6 @@ const r = @cImport(@cInclude("raylib.h"));
 const std = @import("std");
 const constants = @import("constants.zig");
 
-var prng = std.rand.DefaultPrng.init(10000000000000000);
-const rand = prng.random();
-
 pub const PipeStructure = struct {
     position: r.Vector2,
     width: u16,
@@ -13,6 +10,13 @@ pub const PipeStructure = struct {
 };
 
 fn generatePipeHeight() u16 {
+    var prng = std.rand.DefaultPrng.init(blk: {
+        var seed: u64 = undefined;
+        std.posix.getrandom(std.mem.asBytes(&seed)) catch unreachable;
+        break :blk seed;
+    });
+    const rand = prng.random();
+
     const height = rand.intRangeLessThan(u16, constants.MIN_PIPE_HEIGHT, constants.MAX_PIPE_HEIGHT);
     return height;
 }

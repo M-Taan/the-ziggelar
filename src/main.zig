@@ -14,13 +14,13 @@ fn simulateGravity(player: *Player) void {
     }
 
     if (player.position.y != constants.SCREEN_HEIGHT - constants.PLAYER_RADIUS and !r.IsKeyPressed(r.KEY_SPACE)) {
-        player.position.y = player.position.y + 5;
+        player.position.y = player.position.y + 4;
     }
 }
 
 fn listenToPlayerInput(player: *Player) void {
     if (r.IsKeyPressed(r.KEY_SPACE) or r.IsMouseButtonPressed(r.MOUSE_LEFT_BUTTON)) {
-        player.position.y = player.position.y - 50;
+        player.position.y = player.position.y - 40;
     }
 }
 
@@ -42,9 +42,9 @@ pub fn main() !void {
 
         pp.drawPipes(&pipes);
 
-        _ = simulateGravity(&player);
+        simulateGravity(&player);
 
-        _ = listenToPlayerInput(&player);
+        listenToPlayerInput(&player);
 
         r.EndDrawing();
     }
