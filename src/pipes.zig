@@ -1,35 +1,65 @@
 const r = @cImport(@cInclude("raylib.h"));
 const std = @import("std");
+const constants = @import("constants.zig");
 
-pub const StructuralEntity = struct {
+var prng = std.rand.DefaultPrng.init(10000000000000000);
+const rand = prng.random();
+
+pub const PipeStructure = struct {
     position: r.Vector2,
     width: u16,
     height: u16,
-    shouldEndGame: bool = true,
+    isLower: bool = false,
 };
 
-pub fn initPipes(comptime numberOfPipes: u8, minStartingPosition: u16, height: u16, seed: u64) [numberOfPipes]StructuralEntity {
-    var pipes: [numberOfPipes]StructuralEntity = undefined;
+fn generatePipeHeight() u16 {
+    const height = rand.intRangeLessThan(u16, constants.MIN_PIPE_HEIGHT, constants.MAX_PIPE_HEIGHT);
+    return height;
+}
 
-    var prng = std.rand.DefaultPrng.init(seed);
-    const rand = prng.random();
+pub fn initPipes(minStartingPosition: u16) [constants.NUMBER_OF_PIPES]PipeStructure {
+    var pipes: [constants.NUMBER_OF_PIPES]PipeStructure = undefined;
 
-    for (1..numberOfPipes, 0..) |pipe, index| {
+    for (1..constants.NUMBER_OF_PIPES, 0..) |pipe, index| {
         if (pipe % 2 == 0) {
             continue;
         }
-        const pipeHeight = rand.intRangeLessThan(u16, 250, 300);
-        pipes[index] = StructuralEntity{
+
+        const upperPipeHeight = generatePipeHeight();
+        const lowerPiepHeight = generatePipeHeight();
+
+        pipes[index] = PipeStructure{
             .position = r.Vector2{ .x = @as(f32, @floatFromInt(minStartingPosition)) - (110 * @as(f32, (@floatFromInt(pipe)))), .y = 0 },
             .width = 100,
-            .height = pipeHeight,
+            .height = upperPipeHeight,
         };
-        pipes[index + 1] = StructuralEntity{
-            .position = r.Vector2{ .x = @as(f32, @floatFromInt(minStartingPosition)) - (110 * @as(f32, (@floatFromInt(pipe)))), .y = @floatFromInt(height - pipeHeight) },
+        pipes[index + 1] = PipeStructure{
+            .position = r.Vector2{ .x = @as(f32, @floatFromInt(minStartingPosition)) - (110 * @as(f32, (@floatFromInt(pipe)))), .y = @floatFromInt(constants.SCREEN_HEIGHT - lowerPiepHeight) },
             .width = 100,
-            .height = pipeHeight,
+            .height = lowerPiepHeight,
+            .isLower = true,
         };
     }
 
     return pipes;
+}
+
+pub fn drawPipes(pipes: *[constants.NUMBER_OF_PIPES]PipeStructure) void {
+    for (pipes, 0..) |pipe, index| {
+        r.DrawRectangle(@intFromFloat(pipe.position.x), @intFromFloat(pipe.position.y), pipe.width, pipe.height, r.BLUE);
+
+        // move pipes towards the player
+        pipes[index].position.x -= 2;
+
+        // move pipe position to the end of screen when the pipe is offscreen
+        if (pipes[index].position.x < -constants.PIPE_WIDTH) {
+            pipes[index].position.x = constants.SCREEN_WIDTH;
+
+            pipes[index].height = generatePipeHeight();
+
+            if (pipes[index].isLower) {
+                pipes[index].position.y = @floatFromInt(constants.SCREEN_HEIGHT - pipes[index].height);
+            }
+        }
+    }
 }
