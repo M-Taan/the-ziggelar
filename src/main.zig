@@ -2,10 +2,12 @@ const std = @import("std");
 const r = @cImport(@cInclude("raylib.h"));
 const pp = @import("pipes.zig");
 const constants = @import("constants.zig");
+const global = @import("global.zig");
+const go = @import("game_over.zig");
 
 const Player = struct { position: r.Vector2, radius: f32 };
 
-var gameScore: u16 = 0;
+var state = global.State{};
 
 fn simulateGravity(player: *Player) void {
     if (player.position.y > constants.SCREEN_HEIGHT) {
@@ -33,16 +35,27 @@ fn checkForCollision(player: Player, pipes: [constants.NUMBER_OF_PIPES]pp.PipeSt
             .height = @floatFromInt(pipe.height),
         };
 
-        if (r.CheckCollisionCircleRec(player.position, player.radius, pipeRec)) {}
+        if (r.CheckCollisionCircleRec(player.position, player.radius, pipeRec)) {
+            state.gameOver = true;
+        }
     }
 }
 
 fn addToScore(player: Player, pipes: [constants.NUMBER_OF_PIPES]pp.PipeStructure) void {
     for (pipes) |pipe| {
         if (player.position.x == pipe.position.x + @as(f32, @floatFromInt(pipe.width)) and pipe.isLower) {
-            gameScore += 1;
-            std.log.debug("score is now {}", .{gameScore});
+            state.gameScore += 1;
+            std.log.debug("score is now {}", .{state.gameScore});
         }
+    }
+}
+
+fn resetGame(player: *Player, pipes: *[constants.NUMBER_OF_PIPES]pp.PipeStructure) void {
+    if (r.IsKeyPressed(r.KEY_ENTER)) {
+        pipes.* = pp.initPipes(constants.SCREEN_WIDTH);
+        state.gameScore = 0;
+        state.gameOver = false;
+        player.position.y = constants.PLAYER_STARTING_Y;
     }
 }
 
@@ -62,19 +75,24 @@ pub fn main() !void {
     while (!r.WindowShouldClose()) {
         r.BeginDrawing();
 
-        r.ClearBackground(r.BLACK);
+        if (state.gameOver) {
+            go.gameOverScreen(state);
+            resetGame(&player, &pipes);
+        } else {
+            r.ClearBackground(r.BLACK);
 
-        r.DrawCircle(@intFromFloat(player.position.x), @intFromFloat(player.position.y), player.radius, r.WHITE);
+            r.DrawCircle(@intFromFloat(player.position.x), @intFromFloat(player.position.y), player.radius, r.WHITE);
 
-        pp.drawPipes(&pipes);
+            pp.drawPipes(&pipes);
 
-        simulateGravity(&player);
+            simulateGravity(&player);
 
-        listenToPlayerInput(&player);
+            listenToPlayerInput(&player);
 
-        checkForCollision(player, pipes);
+            checkForCollision(player, pipes);
 
-        addToScore(player, pipes);
+            addToScore(player, pipes);
+        }
 
         r.EndDrawing();
     }
