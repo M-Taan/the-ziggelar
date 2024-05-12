@@ -4,8 +4,6 @@ pub const PLAYER_STARTING_Y = 100;
 pub const SCREEN_WIDTH = 1280;
 pub const SCREEN_HEIGHT = 720;
 
-pub const PLAYER_RADIUS = 20;
-
 // Pipes
 pub const NUMBER_OF_PIPES = 10;
 pub const PIPE_WIDTH = 100;
